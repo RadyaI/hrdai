@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase";
 import toast, { Toaster } from "react-hot-toast";
 
-const MAX_QUESTIONS = 2;
+const MAX_QUESTIONS = 5;
 const AI_API = "https://radya.my.id/api/chat/groq";
 
 type Message = { role: "user" | "model"; text: string };
