@@ -25,8 +25,25 @@ ATURAN PENTING:
 
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition;
-    webkitSpeechRecognition: typeof SpeechRecognition;
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
+  }
+  interface SpeechRecognition extends EventTarget {
+    lang: string;
+    continuous: boolean;
+    interimResults: boolean;
+    start(): void;
+    stop(): void;
+    onstart: ((e: Event) => void) | null;
+    onend: ((e: Event) => void) | null;
+    onresult: ((e: SpeechRecognitionEvent) => void) | null;
+    onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
+  }
+  interface SpeechRecognitionEvent extends Event {
+    results: SpeechRecognitionResultList;
+  }
+  interface SpeechRecognitionErrorEvent extends Event {
+    error: string;
   }
 }
 
@@ -43,6 +60,8 @@ export default function SessionPage() {
   const [done, setDone] = useState(false);
   const [config, setConfig] = useState<{ company: string; field: string; level: string } | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [autoSend, setAutoSend] = useState(false);
+  const autoSendRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -75,12 +94,22 @@ export default function SessionPage() {
     rec.interimResults = true;
     rec.continuous = false;
     rec.onstart = () => setIsListening(true);
+    let finalTranscript = "";
     rec.onresult = (e) => {
       const transcript = Array.from(e.results).map((r) => r[0].transcript).join("");
       setInput(transcript);
+      if (e.results[e.results.length - 1].isFinal) finalTranscript = transcript;
     };
     rec.onerror = (e) => { toast.error(`Voice error: ${e.error}`); setIsListening(false); };
-    rec.onend = () => setIsListening(false);
+    rec.onend = () => {
+      setIsListening(false);
+      // auto send kalau mode langsung kirim & ada hasil
+      if (autoSendRef.current && finalTranscript.trim()) {
+        setInput(finalTranscript.trim());
+        // pakai setTimeout biar state input keupdate dulu
+        setTimeout(() => sendMessage(), 100);
+      }
+    };
     recognitionRef.current = rec;
     rec.start();
   }
@@ -253,11 +282,44 @@ export default function SessionPage() {
             </div>
           ) : (
             <>
+              {/* Toggle auto-send */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", gap: 4, margin: 0 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  Enter untuk kirim · Shift+Enter baris baru · atau jawab pake suara
+                </p>
+                <button
+                  onClick={() => { setAutoSend((v) => { autoSendRef.current = !v; return !v; }); }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 7,
+                    background: "transparent", border: "none", cursor: "pointer", padding: 0,
+                  }}
+                >
+                  <span style={{ fontSize: 11, color: autoSend ? "#c4b5fd" : "rgba(255,255,255,0.3)" }}>
+                    {autoSend ? "Langsung kirim" : "Koreksi dulu"}
+                  </span>
+                  {/* Toggle pill */}
+                  <div style={{
+                    width: 36, height: 20, borderRadius: 99,
+                    background: autoSend ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.08)",
+                    border: autoSend ? "0.5px solid rgba(124,58,237,0.5)" : "0.5px solid rgba(255,255,255,0.12)",
+                    position: "relative", transition: "all 0.2s",
+                  }}>
+                    <div style={{
+                      position: "absolute", top: 3, left: autoSend ? 19 : 3,
+                      width: 14, height: 14, borderRadius: "50%",
+                      background: autoSend ? "#a78bfa" : "rgba(255,255,255,0.3)",
+                      transition: "all 0.2s",
+                    }} />
+                  </div>
+                </button>
+              </div>
+
               {/* Hint */}
-              <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}>
+              {/* <p style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", marginBottom: 8, display: "flex", alignItems: "center", gap: 4 }}>
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 Enter untuk kirim · Shift+Enter baris baru · atau jawab pake suara
-              </p>
+              </p> */}
 
               <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
                 {/* Textarea */}
@@ -348,4 +410,4 @@ export default function SessionPage() {
       `}</style>
     </div>
   );
-} 
+}
