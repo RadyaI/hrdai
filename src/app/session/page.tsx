@@ -43,7 +43,7 @@ declare global {
     results: SpeechRecognitionResultList;
   }
   interface SpeechRecognitionErrorEvent extends Event {
-    error: SpeechRecognitionErrorCode;
+    error: SpeechRecognitionErrorEvent;
   }
 }
 
