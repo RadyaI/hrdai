@@ -20,7 +20,12 @@ ATURAN PENTING:
 - Campuran: pertanyaan soft skill, teknikal ringan, dan situasional.
 - Setelah pertanyaan ke-${MAX_QUESTIONS} dijawab, ucapkan penutup singkat dan tambahkan marker: [INTERVIEW_SELESAI]
 - Gunakan bahasa Indonesia yang profesional tapi tidak kaku.
-- Jangan keluar dari peran HRD.`;
+- Jangan keluar dari peran HRD.
+- FORMAT JAWABAN: Gunakan markdown sederhana untuk keterbacaan.
+  - Gunakan **teks** untuk penekanan penting.
+  - Gunakan bullet point (- item) jika ada lebih dari 2 hal yang ingin disebutkan.
+  - Jika pertanyaan panjang, pecah menjadi poin-poin singkat, jangan satu paragraf panjang.
+  - Hindari kalimat yang terlalu panjang dan bertele-tele.`;
 }
 
 declare global {
@@ -43,12 +48,60 @@ declare global {
     results: SpeechRecognitionResultList;
   }
   interface SpeechRecognitionErrorEvent extends Event {
-    error: SpeechRecognitionErrorEvent;
+    error: string;
   }
 }
 
-function getTime() {
+function getTime(): string {
   return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Minimal markdown → React nodes (bold, bullet lists, line breaks) */
+function renderMarkdown(text: string): React.ReactNode {
+  const lines = text.split("\n");
+  const nodes: React.ReactNode[] = [];
+  let bulletBuffer: string[] = [];
+
+  function flushBullets(key: string) {
+    if (bulletBuffer.length === 0) return;
+    nodes.push(
+      <ul key={key} style={{ margin: "6px 0", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 3 }}>
+        {bulletBuffer.map((item, i) => (
+          <li key={i} style={{ lineHeight: 1.6 }}>{renderInline(item)}</li>
+        ))}
+      </ul>
+    );
+    bulletBuffer = [];
+  }
+
+  lines.forEach((line, idx) => {
+    const isBullet = /^[-*]\s+/.test(line);
+    if (isBullet) {
+      bulletBuffer.push(line.replace(/^[-*]\s+/, ""));
+    } else {
+      flushBullets(`ul-${idx}`);
+      if (line.trim() === "") {
+        nodes.push(<br key={`br-${idx}`} />);
+      } else {
+        nodes.push(
+          <p key={`p-${idx}`} style={{ margin: "3px 0", lineHeight: 1.65 }}>
+            {renderInline(line)}
+          </p>
+        );
+      }
+    }
+  });
+  flushBullets("ul-end");
+  return <>{nodes}</>;
+}
+
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : part
+  );
 }
 
 export default function SessionPage() {
@@ -56,57 +109,68 @@ export default function SessionPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  // questionCount = jumlah jawaban user (bukan reply AI)
   const [questionCount, setQuestionCount] = useState(0);
   const [done, setDone] = useState(false);
   const [config, setConfig] = useState<{ company: string; field: string; level: string } | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [autoSend, setAutoSend] = useState(false);
+  const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
   const autoSendRef = useRef(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const finalTranscriptRef = useRef("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadingStartRef = useRef<number>(0);
+
+  // ── Auto-resize textarea ──
+  function resizeTextarea() {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+  }
+
+  useEffect(() => { resizeTextarea(); }, [input]);
 
   useEffect(() => {
     const raw = sessionStorage.getItem("interview_config");
-    if (!raw) return router.replace("/setup");
-    const cfg = JSON.parse(raw);
+    if (!raw) { router.replace("/setup"); return; }
+    const cfg = JSON.parse(raw) as { company: string; field: string; level: string };
     setConfig(cfg);
     startInterview(cfg);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  function toggleMic() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { toast.error("Browser kamu tidak support voice input 😢"); return; }
-    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
-    const rec = new SR();
-    rec.lang = "id-ID";
-    rec.interimResults = true;
-    rec.continuous = false;
-    rec.onstart = () => setIsListening(true);
-    let finalTranscript = "";
-    rec.onresult = (e) => {
-      const transcript = Array.from(e.results).map((r) => r[0].transcript).join("");
-      setInput(transcript);
-      if (e.results[e.results.length - 1].isFinal) finalTranscript = transcript;
-    };
-    rec.onerror = (e) => { toast.error(`Voice error: ${e.error}`); setIsListening(false); };
-    rec.onend = () => {
-      setIsListening(false);
-      if (autoSendRef.current && finalTranscript.trim()) {
-        setInput(finalTranscript.trim());
-        setTimeout(() => sendMessage(), 100);
+  // ── Loading timer ──
+  useEffect(() => {
+    if (loading) {
+      loadingStartRef.current = Date.now();
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds(Math.floor((Date.now() - loadingStartRef.current) / 1000));
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      if (loadingStartRef.current > 0) {
+        setResponseTime(+(((Date.now() - loadingStartRef.current) / 1000).toFixed(1)));
+        loadingStartRef.current = 0;
       }
-    };
-    recognitionRef.current = rec;
-    rec.start();
-  }
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [loading]);
 
+  // ── startInterview: set messages langsung, TIDAK naikin questionCount ──
   async function startInterview(cfg: { company: string; field: string; level: string }) {
     setLoading(true);
+    setResponseTime(null);
     try {
       const systemPrompt = buildSystemPrompt(cfg.company, cfg.field, cfg.level);
       const res = await fetch(AI_API, {
@@ -117,12 +181,13 @@ export default function SessionPage() {
           persona: "hrd_interview",
         }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { text?: string; error?: string };
       if (data.error) throw new Error(data.error);
       setMessages([
         { role: "user", text: "Halo, saya siap untuk interview.", time: getTime() },
-        { role: "model", text: data.text, time: getTime() },
+        { role: "model", text: data.text ?? "", time: getTime() },
       ]);
+      // questionCount tetap 0 di sini
     } catch {
       toast.error("Gagal memulai interview. Coba refresh.");
     } finally {
@@ -136,9 +201,13 @@ export default function SessionPage() {
 
     const userMsg: Message = { role: "user", text: input.trim(), time: getTime() };
     const newMessages = [...messages, userMsg];
+    const newCount = questionCount + 1; // jawaban user ke-N
+
     setMessages(newMessages);
     setInput("");
+    setQuestionCount(newCount); // naik di sini, bukan di AI reply
     setLoading(true);
+    setResponseTime(null);
 
     try {
       const systemPrompt = buildSystemPrompt(config.company, config.field, config.level);
@@ -147,17 +216,18 @@ export default function SessionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ history: newMessages, persona: "hrd_interview", systemPrompt }),
       });
-      const data = await res.json();
+      const data = (await res.json()) as { text?: string; error?: string };
       if (data.error) throw new Error(data.error);
 
-      const aiText: string = data.text;
-      const isFinished = aiText.includes("[INTERVIEW_SELESAI]");
+      const aiText = data.text ?? "";
+      const hasMarker = aiText.includes("[INTERVIEW_SELESAI]");
       const cleanText = aiText.replace("[INTERVIEW_SELESAI]", "").trim();
       const updated: Message[] = [...newMessages, { role: "model", text: cleanText, time: getTime() }];
 
       setMessages(updated);
-      setQuestionCount((q) => q + 1);
-      if (isFinished) {
+
+      // Selesai kalau: AI kasih marker ATAU user udah jawab MAX_QUESTIONS pertanyaan
+      if (hasMarker || newCount >= MAX_QUESTIONS) {
         setDone(true);
         sessionStorage.setItem("interview_messages", JSON.stringify(updated));
         sessionStorage.setItem("interview_config", JSON.stringify(config));
@@ -169,7 +239,49 @@ export default function SessionPage() {
     }
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  function toggleMic() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast.error("Browser kamu tidak support voice input 😢"); return; }
+    if (isListening) { recognitionRef.current?.stop(); setIsListening(false); return; }
+
+    finalTranscriptRef.current = "";
+    const rec = new SR();
+    rec.lang = "id-ID";
+    rec.interimResults = true;
+    rec.continuous = false;
+
+    rec.onstart = () => setIsListening(true);
+
+    rec.onresult = (e: SpeechRecognitionEvent) => {
+      let interim = "";
+      let final = "";
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      if (final) finalTranscriptRef.current = final;
+      setInput(final || interim);
+    };
+
+    rec.onerror = (e: SpeechRecognitionErrorEvent) => {
+      toast.error(`Voice error: ${e.error}`);
+      setIsListening(false);
+    };
+
+    rec.onend = () => {
+      setIsListening(false);
+      const transcript = finalTranscriptRef.current.trim();
+      if (autoSendRef.current && transcript) {
+        setInput(transcript);
+        setTimeout(() => sendMessage(), 50);
+      }
+    };
+
+    recognitionRef.current = rec;
+    rec.start();
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   }
 
@@ -194,19 +306,18 @@ export default function SessionPage() {
         }
         #msg-scroll::-webkit-scrollbar { width: 5px; }
         #msg-scroll::-webkit-scrollbar-track { background: transparent; }
-        #msg-scroll::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.15);
-          border-radius: 99px;
-        }
-        #msg-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.25);
-        }
+        #msg-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 99px; }
+        #msg-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+        .md-msg ul { margin: 6px 0; padding-left: 18px; }
+        .md-msg li { line-height: 1.6; margin-bottom: 2px; }
+        .md-msg p { margin: 3px 0; }
+        .md-msg strong { color: rgba(255,255,255,0.95); }
       `}</style>
 
       <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#0f0f10", fontFamily: "var(--font-sans, system-ui)", overflow: "hidden" }}>
         <Toaster position="top-center" toastOptions={{ style: { background: "#1c1c1e", color: "#fff", border: "0.5px solid rgba(255,255,255,0.1)" } }} />
 
-        {/* ── TOPBAR (sticky) ── */}
+        {/* ── TOPBAR ── */}
         <div style={{ borderBottom: "0.5px solid rgba(255,255,255,0.07)", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0, background: "#0f0f10", zIndex: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
@@ -237,11 +348,8 @@ export default function SessionPage() {
           </div>
         </div>
 
-        {/* ── MESSAGES (scrollable) ── */}
-        <div
-          id="msg-scroll"
-          style={{ flex: 1, overflowY: "auto", padding: "28px 24px", display: "flex", flexDirection: "column", gap: 20 }}
-        >
+        {/* ── MESSAGES ── */}
+        <div id="msg-scroll" style={{ flex: 1, overflowY: "auto", padding: "28px 24px", display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ maxWidth: 760, width: "100%", margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
             {messages.map((msg, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: msg.role === "user" ? "flex-end" : "flex-start", gap: 4 }}>
@@ -249,30 +357,43 @@ export default function SessionPage() {
                   {msg.role === "model" && (
                     <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(124,58,237,0.2)", border: "0.5px solid rgba(124,58,237,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 500, color: "#c4b5fd", flexShrink: 0 }}>HR</div>
                   )}
-                  <div style={{
-                    maxWidth: "68%", padding: "11px 15px",
-                    borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                    fontSize: 13.5, lineHeight: 1.65,
-                    background: msg.role === "user" ? "#6d28d9" : "rgba(255,255,255,0.045)",
-                    border: msg.role === "user" ? "none" : "0.5px solid rgba(255,255,255,0.08)",
-                    color: msg.role === "user" ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.78)",
-                  }}>
-                    {msg.text}
+                  <div
+                    className={msg.role === "model" ? "md-msg" : undefined}
+                    style={{
+                      maxWidth: "68%", padding: "11px 15px",
+                      borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                      fontSize: 13.5, lineHeight: 1.65,
+                      background: msg.role === "user" ? "#6d28d9" : "rgba(255,255,255,0.045)",
+                      border: msg.role === "user" ? "none" : "0.5px solid rgba(255,255,255,0.08)",
+                      color: msg.role === "user" ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.78)",
+                    }}
+                  >
+                    {msg.role === "model" ? renderMarkdown(msg.text) : msg.text}
                   </div>
                 </div>
-                <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.2)", paddingLeft: msg.role === "model" ? 38 : 0 }}>{msg.time}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, paddingLeft: msg.role === "model" ? 38 : 0 }}>
+                  <span style={{ fontSize: 10.5, color: "rgba(255,255,255,0.2)" }}>{msg.time}</span>
+                  {msg.role === "model" && i === messages.length - 1 && responseTime !== null && (
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.18)", background: "rgba(255,255,255,0.05)", border: "0.5px solid rgba(255,255,255,0.08)", borderRadius: 99, padding: "1px 7px" }}>
+                      {responseTime}s
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
 
             {loading && (
               <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
                 <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(124,58,237,0.2)", border: "0.5px solid rgba(124,58,237,0.35)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 500, color: "#c4b5fd", flexShrink: 0 }}>HR</div>
-                <div style={{ padding: "13px 16px", borderRadius: "14px 14px 14px 4px", background: "rgba(255,255,255,0.045)", border: "0.5px solid rgba(255,255,255,0.08)" }}>
-                  <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-                    {[0, 1, 2].map((i) => (
-                      <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(255,255,255,0.25)", animation: "bounce 1s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
-                    ))}
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  <div style={{ padding: "13px 16px", borderRadius: "14px 14px 14px 4px", background: "rgba(255,255,255,0.045)", border: "0.5px solid rgba(255,255,255,0.08)" }}>
+                    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+                      {[0, 1, 2].map((i) => (
+                        <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(255,255,255,0.25)", animation: "bounce 1s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+                      ))}
+                    </div>
                   </div>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", paddingLeft: 4 }}>{elapsedSeconds}s...</span>
                 </div>
               </div>
             )}
@@ -280,7 +401,7 @@ export default function SessionPage() {
           </div>
         </div>
 
-        {/* ── INPUT AREA (sticky) ── */}
+        {/* ── INPUT AREA ── */}
         <div style={{ borderTop: "0.5px solid rgba(255,255,255,0.07)", padding: "14px 24px 20px", flexShrink: 0, background: "#0f0f10", zIndex: 10 }}>
           <div style={{ maxWidth: 760, margin: "0 auto" }}>
             {done ? (
@@ -317,7 +438,7 @@ export default function SessionPage() {
                   <textarea
                     ref={textareaRef}
                     value={input}
-                    onChange={(e) => setInput(e.target.value)}
+                    onChange={(e) => { setInput(e.target.value); resizeTextarea(); }}
                     onKeyDown={handleKeyDown}
                     placeholder={isListening ? "🎤  Lagi dengerin kamu..." : "Tulis jawaban kamu..."}
                     rows={2}
@@ -327,7 +448,9 @@ export default function SessionPage() {
                       border: isListening ? "0.5px solid rgba(239,68,68,0.45)" : "0.5px solid rgba(255,255,255,0.09)",
                       borderRadius: 12, padding: "12px 14px",
                       color: "rgba(255,255,255,0.85)", fontSize: 13.5, lineHeight: 1.55,
-                      resize: "none", outline: "none", fontFamily: "inherit", transition: "border-color 0.2s",
+                      resize: "none", outline: "none", fontFamily: "inherit",
+                      transition: "border-color 0.2s, height 0.1s",
+                      minHeight: 56, maxHeight: 180, overflowY: "auto",
                     }}
                   />
 
