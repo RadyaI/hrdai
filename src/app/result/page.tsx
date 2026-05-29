@@ -132,6 +132,8 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
     try {
       await addDoc(collection(db, "users", user.uid, "sessions"), {
         ...config, messages,
+        name: user.displayName,
+        email: user.email,
         score: fb.score, verdict: fb.verdict, summary: fb.summary,
         categories: fb.categories,
         strengths: fb.strengths, improvements: fb.improvements, tips: fb.tips,
