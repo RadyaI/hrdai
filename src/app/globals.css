@@ -4,3 +4,16 @@
 button {
     cursor: pointer;
 }
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 5;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #efefef;
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background-color: transparent;
+}

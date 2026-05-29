@@ -54,9 +54,9 @@ function ScoreRing({ score }: { score: number }) {
 function VerdictBadge({ verdict, score }: { verdict: string; score: number }) {
   const cfg =
     score >= 80 ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" :
-    score >= 60 ? "bg-blue-500/20 text-blue-300 border-blue-500/30" :
-    score >= 40 ? "bg-amber-500/20 text-amber-300 border-amber-500/30" :
-    "bg-red-500/20 text-red-300 border-red-500/30";
+      score >= 60 ? "bg-blue-500/20 text-blue-300 border-blue-500/30" :
+        score >= 40 ? "bg-amber-500/20 text-amber-300 border-amber-500/30" :
+          "bg-red-500/20 text-red-300 border-red-500/30";
   return (
     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg}`}>
       {verdict}
@@ -192,19 +192,35 @@ export default function DashboardPage() {
         )}
 
         {/* CTA Button */}
-        <div className={`mb-10 transition-all duration-700 delay-150 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          <button
-            onClick={() => router.push("/setup")}
-            className="group relative w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm overflow-hidden transition-all active:scale-[0.98] hover:opacity-90"
-            style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}
-          >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Mulai Simulasi Interview Baru
-            </span>
-          </button>
+        <div className="flex gap-3">
+          <div className={`mb-10 transition-all duration-700 delay-150 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+            <button
+              onClick={() => router.push("/setup")}
+              className="group relative w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm overflow-hidden transition-all active:scale-[0.98] hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Mulai Simulasi Interview Baru
+              </span>
+            </button>
+          </div>
+          <div className={`mb-10 transition-all duration-700 delay-150 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+            <button
+              onClick={() => router.push("/cv-roasting")}
+              className="group relative w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm overflow-hidden transition-all active:scale-[0.98] hover:opacity-90"
+              style={{ background: "linear-gradient(135deg, #c4671c, #eb2525)" }}
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Roasting CV
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* History */}
