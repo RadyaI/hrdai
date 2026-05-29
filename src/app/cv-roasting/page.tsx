@@ -20,7 +20,7 @@ const WINDOW_MS = 60 * 60 * 1000; // 1 jam
 // Akun bebas limit — isi dengan Firebase UID
 const VIP_UIDS: string[] = [
     "7fH9uSsGWJeonS7Vb37EBRTyOFs1", //radyaiftikhar@gmail.com
-    // "omhSJyCzETS24T42AVKMQgBelIC3" //nurainistudy08@gmail.com
+    "omhSJyCzETS24T42AVKMQgBelIC3" //nurainistudy08@gmail.com
 
 ];
 
