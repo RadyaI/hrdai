@@ -28,7 +28,7 @@ function ScoreRing({ score }: { score: number }) {
 
   return (
     <svg width="72" height="72" className="rotate-[-90deg]">
-      <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
+      <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="5" />
       <circle
         cx="36" cy="36" r={r} fill="none"
         stroke={color} strokeWidth="5"
@@ -53,10 +53,10 @@ function ScoreRing({ score }: { score: number }) {
 
 function VerdictBadge({ verdict, score }: { verdict: string; score: number }) {
   const cfg =
-    score >= 80 ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" :
-      score >= 60 ? "bg-blue-500/20 text-blue-300 border-blue-500/30" :
-        score >= 40 ? "bg-amber-500/20 text-amber-300 border-amber-500/30" :
-          "bg-red-500/20 text-red-300 border-red-500/30";
+    score >= 80 ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
+      score >= 60 ? "bg-blue-100 text-blue-700 border-blue-200" :
+        score >= 40 ? "bg-amber-100 text-amber-700 border-amber-200" :
+          "bg-red-100 text-red-700 border-red-200";
   return (
     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg}`}>
       {verdict}
@@ -107,174 +107,393 @@ export default function DashboardPage() {
   const bestScore = sessions.length ? Math.max(...sessions.map((s) => s.score)) : null;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+    <div
+      className="min-h-screen overflow-x-hidden"
+      style={{
+        background: "#F4F0E8",
+        fontFamily: "'Nunito', sans-serif",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
+        * { font-family: 'Nunito', sans-serif; }
+
+        .bento-card {
+          background: #fff;
+          border-radius: 20px;
+          border: 1.5px solid rgba(0,0,0,0.06);
+          transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .bento-card:hover {
+          box-shadow: 0 8px 32px rgba(0,0,0,0.07);
+        }
+        .session-row {
+          display: flex;
+          align-items: center;
+          gap: 14px;
+          padding: 12px 14px;
+          border-radius: 14px;
+          cursor: pointer;
+          transition: background 0.15s, transform 0.15s;
+        }
+        .session-row:hover {
+          background: #F4F0E8;
+          transform: translateX(3px);
+        }
+        .btn-main {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          font-weight: 700;
+          font-size: 14px;
+          padding: 13px 22px;
+          border-radius: 14px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.18s;
+          font-family: 'Nunito', sans-serif;
+        }
+        .btn-main:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        }
+        .btn-main:active {
+          transform: scale(0.97);
+        }
+        .pulse-dot {
+          width: 7px; height: 7px;
+          border-radius: 50%;
+          background: #D6FB61;
+          animation: blink 2s infinite;
+          display: inline-block;
+        }
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+        .fade-up {
+          opacity: 0;
+          transform: translateY(16px);
+          animation: fadeUp 0.5s ease forwards;
+        }
+        @keyframes fadeUp {
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-wrap {
+          padding: 0 40px;
+        }
+        .main-wrap {
+          padding: 32px 40px 60px;
+        }
+        .grid-top {
+          display: grid;
+          grid-template-columns: 1fr 340px;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+        .grid-bottom {
+          display: grid;
+          grid-template-columns: 340px 1fr;
+          gap: 16px;
+        }
+        .hero-title {
+          font-size: 42px;
+        }
+        .stats-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+          .nav-wrap {
+            padding: 0 20px;
+          }
+          .main-wrap {
+            padding: 20px 20px 60px;
+          }
+          .grid-top {
+            grid-template-columns: 1fr;
+          }
+          .grid-bottom {
+            display: flex;
+            flex-direction: column;
+          }
+          .hero-title {
+            font-size: 32px;
+          }
+          .stats-wrap {
+            flex-direction: row;
+            flex-wrap: wrap;
+          }
+          .stats-wrap > div {
+            flex: 1 1 40%;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .stats-wrap {
+            flex-direction: column;
+          }
+          .nav-wrap {
+            padding: 0 16px;
+          }
+          .main-wrap {
+            padding: 16px 16px 40px;
+          }
+        }
+      `}</style>
+
       <Toaster position="top-right" toastOptions={{
-        style: { background: "#1a1a2e", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }
+        style: { background: "#1a1a1a", color: "#fff", borderRadius: "12px", fontSize: "14px" }
       }} />
 
-      {/* Aurora background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #7c3aed, transparent 70%)" }} />
-        <div className="absolute top-20 right-0 w-[500px] h-[500px] rounded-full opacity-15"
-          style={{ background: "radial-gradient(circle, #2563eb, transparent 70%)" }} />
-        <div className="absolute bottom-0 left-1/3 w-[400px] h-[400px] rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #059669, transparent 70%)" }} />
-        <div className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "60px 60px"
-          }} />
-      </div>
-
-      <div className="relative z-10 max-w-5xl mx-auto px-6 py-10">
-
-        {/* Navbar */}
-        <nav className="flex items-center justify-between mb-16">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-            </div>
-            <span className="font-bold text-lg tracking-tight">HRD<span className="text-purple-400">.ai</span></span>
+      <nav className="nav-wrap" style={{
+        background: "#fff",
+        borderBottom: "1.5px solid rgba(0,0,0,0.06)",
+        height: "60px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{
+            width: 34, height: 34,
+            background: "#0F1A0A",
+            borderRadius: 10,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D6FB61" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
           </div>
-
-          <div className="flex items-center gap-4">
-            {user?.photoURL && (
-              <img src={user.photoURL} alt="avatar" className="w-8 h-8 rounded-full ring-2 ring-white/20" />
-            )}
-            <span className="text-sm text-white/50 hidden sm:block">{user?.displayName}</span>
-            <button onClick={handleLogout}
-              className="text-xs text-white/40 hover:text-white/80 transition-colors px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20">
-              Logout
-            </button>
-          </div>
-        </nav>
-
-        {/* Hero section */}
-        <div className={`mb-12 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-medium mb-5">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-            AI-Powered Interview Simulator
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3 leading-tight">
-            Halo,{" "}
-            <span style={{ background: "linear-gradient(90deg, #a78bfa, #60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              {user?.displayName}!
-            </span>
-          </h1>
-          <p className="text-white/50 text-lg">Siap hajar interview hari ini? 🎯</p>
+          <span style={{ fontWeight: 800, fontSize: 17, color: "#0F1A0A", letterSpacing: "-0.3px" }}>
+            HRD<span style={{ color: "#3D6B2C" }}>.ai</span>
+          </span>
         </div>
 
-        {/* Stats row */}
-        {sessions.length > 0 && (
-          <div className={`grid grid-cols-3 gap-4 mb-8 transition-all duration-700 delay-100 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {user?.photoURL && (
+            <img src={user.photoURL} alt="avatar"
+              style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #D6FB61", objectFit: "cover" }} />
+          )}
+          <span style={{ fontSize: 13, color: "#6B7F60", fontWeight: 500 }} className="hidden sm:inline">
+            {user?.displayName}
+          </span>
+          <button onClick={handleLogout} style={{
+            fontSize: 12, fontWeight: 600, color: "#6B7F60",
+            background: "transparent",
+            border: "1.5px solid rgba(0,0,0,0.1)",
+            borderRadius: 20, padding: "6px 14px",
+            cursor: "pointer", fontFamily: "Nunito, sans-serif",
+            transition: "all .15s",
+          }}>
+            Logout
+          </button>
+        </div>
+      </nav>
+
+      <div className="main-wrap">
+
+        <div className={`grid-top ${mounted ? "fade-up" : ""}`} style={{ animationDelay: "0.05s" }}>
+          <div className="bento-card" style={{
+            padding: "36px 40px",
+            background: "#0F1A0A",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            minHeight: 220,
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{
+              position: "absolute", top: -60, right: -60,
+              width: 220, height: 220,
+              borderRadius: "50%",
+              background: "rgba(214,251,97,0.08)",
+              pointerEvents: "none",
+            }} />
+
+            <div>
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 7,
+                background: "rgba(214,251,97,0.12)",
+                border: "1px solid rgba(214,251,97,0.25)",
+                borderRadius: 20, padding: "5px 12px",
+                marginBottom: 20,
+              }}>
+                <span className="pulse-dot" />
+                <span style={{ fontSize: 11, fontWeight: 700, color: "#D6FB61", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                  AI Interview Simulator
+                </span>
+              </div>
+
+              <h1 className="hero-title" style={{
+                fontWeight: 900,
+                color: "#fff", lineHeight: 1.1,
+                letterSpacing: "-1px", margin: 0,
+              }}>
+                Halo,{" "}
+                <span style={{
+                  background: "#D6FB61",
+                  color: "#0F1A0A",
+                  borderRadius: 8,
+                  padding: "0 8px 2px",
+                  display: "inline-block",
+                  marginTop: 8
+                }}>
+                  {user?.displayName ?? "Kamu"}!
+                </span>
+              </h1>
+            </div>
+
+            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", fontWeight: 400, margin: "16px 0 0" }}>
+              Siap hajar interview hari ini? 🎯
+            </p>
+          </div>
+
+          <div className="stats-wrap">
             {[
-              { label: "Total Sesi", value: sessions.length, suffix: "x" },
-              { label: "Rata-rata Skor", value: avgScore, suffix: "/100" },
-              { label: "Skor Terbaik", value: bestScore, suffix: "/100" },
+              { label: "Total Sesi", value: sessions.length || "—", suffix: sessions.length ? "x" : "" },
+              { label: "Rata-rata Skor", value: avgScore ?? "—", suffix: avgScore ? "/100" : "" },
+              { label: "Skor Terbaik", value: bestScore ?? "—", suffix: bestScore ? "/100" : "" },
             ].map((s) => (
-              <div key={s.label}
-                className="rounded-2xl border border-white/[0.07] p-4 sm:p-5"
-                style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)" }}>
-                <p className="text-white/40 text-xs mb-1">{s.label}</p>
-                <p className="text-2xl sm:text-3xl font-black text-white">
-                  {s.value}<span className="text-sm font-normal text-white/30">{s.suffix}</span>
-                </p>
+              <div key={s.label} className="bento-card" style={{
+                padding: "18px 22px",
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}>
+                <span style={{ fontSize: 13, color: "#6B7F60", fontWeight: 600 }}>{s.label}</span>
+                <span style={{ fontSize: 26, fontWeight: 900, color: "#0F1A0A", letterSpacing: "-0.5px" }}>
+                  {s.value}
+                  <span style={{ fontSize: 13, fontWeight: 500, color: "#aaa" }}>{s.suffix}</span>
+                </span>
               </div>
             ))}
           </div>
-        )}
-
-        {/* CTA Button */}
-        <div className="flex gap-3">
-          <div className={`mb-10 transition-all duration-700 delay-150 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <button
-              onClick={() => router.push("/setup")}
-              className="group relative w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm overflow-hidden transition-all active:scale-[0.98] hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Mulai Simulasi Interview Baru
-              </span>
-            </button>
-          </div>
-          <div className={`mb-10 transition-all duration-700 delay-150 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-            <button
-              onClick={() => router.push("/cv-roasting")}
-              className="group relative w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-sm overflow-hidden transition-all active:scale-[0.98] hover:opacity-90"
-              style={{ background: "linear-gradient(135deg, #c4671c, #eb2525)" }}
-            >
-              <span className="relative z-10 flex items-center justify-center gap-2">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Roasting CV
-              </span>
-            </button>
-          </div>
         </div>
 
-        {/* History */}
-        <div className={`transition-all duration-700 delay-200 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-semibold text-white/30 uppercase tracking-widest">Riwayat Sesi</h2>
-            {sessions.length > 0 && (
-              <span className="text-xs text-white/20">{sessions.length} sesi</span>
+        <div className="grid-bottom">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <button
+              className="btn-main"
+              onClick={() => router.push("/setup")}
+              style={{
+                background: "#0F1A0A",
+                color: "#D6FB61",
+                width: "100%",
+                justifyContent: "center",
+                fontSize: 15,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Mulai Simulasi Interview
+            </button>
+
+            <button
+              className="btn-main"
+              onClick={() => router.push("/cv-roasting")}
+              style={{
+                background: "#fff",
+                color: "#0F1A0A",
+                border: "1.5px solid rgba(0,0,0,0.1)",
+                width: "100%",
+                justifyContent: "center",
+                fontSize: 15,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              Roasting CV
+            </button>
+          </div>
+
+          <div className="bento-card" style={{ padding: "24px 24px" }}>
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginBottom: 16,
+            }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                Riwayat Sesi
+              </span>
+              {sessions.length > 0 && (
+                <span style={{ fontSize: 12, color: "#bbb" }}>{sessions.length} sesi</span>
+              )}
+            </div>
+
+            {loadingHistory ? (
+              <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
+                <div style={{
+                  width: 24, height: 24,
+                  border: "2.5px solid rgba(0,0,0,0.06)",
+                  borderTop: "2.5px solid #3D6B2C",
+                  borderRadius: "50%",
+                  animation: "spin 0.8s linear infinite",
+                }} />
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              </div>
+            ) : sessions.length === 0 ? (
+              <div style={{
+                textAlign: "center", padding: "48px 24px",
+                border: "1.5px dashed rgba(0,0,0,0.08)",
+                borderRadius: 14,
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 10 }}>🎤</div>
+                <p style={{ fontSize: 14, color: "#6B7F60", marginBottom: 4, fontWeight: 600 }}>Belum ada sesi interview</p>
+                <p style={{ fontSize: 12, color: "#bbb" }}>Mulai simulasi pertamamu di atas!</p>
+              </div>
+            ) : (
+              <div>
+                {sessions.map((s) => (
+                  <div key={s.id} className="session-row">
+                    <ScoreRing score={s.score} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
+                        <p style={{ fontWeight: 700, color: "#0F1A0A", fontSize: 14, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {s.company}
+                        </p>
+                        <VerdictBadge verdict={s.verdict} score={s.score} />
+                      </div>
+                      <p style={{ fontSize: 12, color: "#6B7F60", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {s.field} · {s.level}
+                      </p>
+                      <p style={{ fontSize: 11, color: "#bbb", margin: "2px 0 0" }}>
+                        {s.createdAt?.toDate?.()?.toLocaleDateString("id-ID", {
+                          day: "numeric", month: "short", year: "numeric"
+                        }) ?? "—"}
+                      </p>
+                    </div>
+                    <svg style={{ color: "#ccc", flexShrink: 0 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-
-          {loadingHistory ? (
-            <div className="flex justify-center py-16">
-              <div className="w-6 h-6 border-2 border-white/10 border-t-purple-400 rounded-full animate-spin" />
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="text-center py-16 rounded-3xl border border-white/[0.06]"
-              style={{ background: "rgba(255,255,255,0.02)" }}>
-              <div className="text-4xl mb-3">🎤</div>
-              <p className="text-white/40 text-sm mb-1">Belum ada sesi interview</p>
-              <p className="text-white/20 text-xs">Mulai simulasi pertamamu di atas!</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {sessions.map((s) => (
-                <div key={s.id}
-                  className="group rounded-2xl border border-white/[0.07] p-4 sm:p-5 flex items-center gap-4 transition-all hover:border-white/15 cursor-pointer"
-                  style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)" }}>
-                  <ScoreRing score={s.score} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <p className="font-bold text-white text-sm truncate">{s.company}</p>
-                      <VerdictBadge verdict={s.verdict} score={s.score} />
-                    </div>
-                    <p className="text-white/40 text-xs truncate">{s.field} · {s.level}</p>
-                    <p className="text-white/20 text-xs mt-0.5">
-                      {s.createdAt?.toDate?.()?.toLocaleDateString("id-ID", {
-                        day: "numeric", month: "short", year: "numeric"
-                      }) ?? "—"}
-                    </p>
-                  </div>
-                  <svg className="w-4 h-4 text-white/20 group-hover:text-white/50 transition-colors shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-
-        <p className="text-center text-white/10 text-xs mt-16">
-          HRD.ai · Made with 🤖🫰
-        </p>
       </div>
+
+      <p style={{ textAlign: "center", fontSize: 11, color: "#bbb", paddingBottom: 32 }}>
+        HRD.ai · Made with 🤖🫰
+      </p>
     </div>
   );
 }
