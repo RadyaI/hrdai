@@ -21,7 +21,6 @@ const WINDOW_MS = 60 * 60 * 1000; // 1 jam
 const VIP_UIDS: string[] = [
     "7fH9uSsGWJeonS7Vb37EBRTyOFs1", //radyaiftikhar@gmail.com
     "omhSJyCzETS24T42AVKMQgBelIC3" //nurainistudy08@gmail.com
-
 ];
 
 // ============================================================
@@ -174,39 +173,6 @@ Gunakan bahasa Indonesia yang natural, tidak kaku, dan sesuai tone yang diminta.
 }
 
 // ============================================================
-// RESULT RENDERER (Markdown sederhana)
-// ============================================================
-function RoastResult({ text }: { text: string }) {
-    const lines = text.split("\n");
-
-    return (
-        <div className="space-y-1">
-            {lines.map((line, i) => {
-                if (line.startsWith("## ")) {
-                    return (
-                        <h3 key={i} className="text-base font-bold text-white mt-6 mb-2 first:mt-0">
-                            {line.replace("## ", "")}
-                        </h3>
-                    );
-                }
-                if (line.startsWith("- ") || line.startsWith("* ")) {
-                    return (
-                        <div key={i} className="flex gap-2 text-sm text-white/70 leading-relaxed">
-                            <span className="text-purple-400 mt-0.5 shrink-0">•</span>
-                            <span>{line.replace(/^[-*] /, "")}</span>
-                        </div>
-                    );
-                }
-                if (line.trim() === "") return <div key={i} className="h-1" />;
-                return (
-                    <p key={i} className="text-sm text-white/70 leading-relaxed">{line}</p>
-                );
-            })}
-        </div>
-    );
-}
-
-// ============================================================
 // MAIN PAGE
 // ============================================================
 export default function CVRoastPage() {
@@ -224,14 +190,11 @@ export default function CVRoastPage() {
     const [result, setResult] = useState("");
     const [remaining, setRemaining] = useState<number | null>(null);
     const [extracting, setExtracting] = useState(false);
-    const [rawText, setRawText] = useState(""); // teks dari file
+    const [rawText, setRawText] = useState("");
 
     useEffect(() => {
         if (!user) return;
-        // Load sisa limit
         checkRateLimit(user.uid).then(() => {
-            // Just peek — we'll re-check on submit
-            // To just show remaining without consuming, we do a read-only check
             const ref = doc(db, "users", user.uid, "rateLimit", "cv_roast");
             getDoc(ref).then((snap) => {
                 if (VIP_UIDS.includes(user.uid)) { setRemaining(999); return; }
@@ -282,7 +245,6 @@ export default function CVRoastPage() {
         setResult("");
 
         try {
-            // Rate limit check
             const { allowed, remaining: rem, resetIn } = await checkRateLimit(user.uid);
             if (!allowed) {
                 const menit = Math.ceil(resetIn / 60000);
@@ -296,7 +258,6 @@ export default function CVRoastPage() {
             const output = await callAI(prompt);
             setResult(output);
 
-            // Scroll ke result
             setTimeout(() => {
                 document.getElementById("roast-result")?.scrollIntoView({ behavior: "smooth", block: "start" });
             }, 100);
@@ -311,148 +272,156 @@ export default function CVRoastPage() {
     const isVIP = user ? VIP_UIDS.includes(user.uid) : false;
 
     return (
-        <div className="min-h-screen bg-[#0a0a0f] text-white">
+        <div className="min-h-screen bg-[#F4F0E8] text-[#0F1A0A] relative overflow-hidden pb-16">
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+                * { font-family: 'Nunito', sans-serif; }
+                
+                /* Animasi "Suhu Panas" buat elemen dekoratif & border */
+                @keyframes heatUpBg {
+                    0%   { background-color: rgba(250, 204, 21, 0.15); transform: scale(0.9); } /* Yellow */
+                    50%  { background-color: rgba(249, 115, 22, 0.12); transform: scale(1.05); } /* Orange */
+                    100% { background-color: rgba(220, 38, 38, 0.1); transform: scale(1); } /* Red */
+                }
+                
+                @keyframes heatUpBorder {
+                    0%   { border-top-color: #facc15; } /* Yellow */
+                    50%  { border-top-color: #f97316; } /* Orange */
+                    100% { border-top-color: #dc2626; } /* Red */
+                }
+
+                .heat-blob {
+                    animation: heatUpBg 4s ease-in-out forwards;
+                }
+                
+                .heat-border {
+                    border-top: 6px solid #facc15;
+                    animation: heatUpBorder 4s ease-in-out forwards;
+                }
+
+                .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.02); borderRadius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); borderRadius: 10px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+            `}</style>
+
             <Toaster position="top-right" toastOptions={{
-                style: { background: "#1a1a2e", color: "#fff", border: "1px solid rgba(255,255,255,0.1)" }
+                style: { background: "#0F1A0A", color: "#D6FB61", border: "none", borderRadius: "12px", fontWeight: "bold" }
             }} />
 
-            {/* Aurora */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute -top-40 left-1/4 w-[500px] h-[500px] rounded-full opacity-15"
-                    style={{ background: "radial-gradient(circle, #dc2626, transparent 70%)" }} />
-                <div className="absolute bottom-0 right-0 w-[400px] h-[400px] rounded-full opacity-10"
-                    style={{ background: "radial-gradient(circle, #7c3aed, transparent 70%)" }} />
-                <div className="absolute inset-0 opacity-[0.025]"
-                    style={{
-                        backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-                        backgroundSize: "60px 60px"
-                    }} />
-            </div>
+            <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
 
-            <div className="relative z-10 max-w-3xl mx-auto px-6 py-10">
-
-                {/* Navbar */}
-                <nav className="flex items-center justify-between mb-12">
+                <nav className="flex items-center justify-between mb-10">
                     <button onClick={() => router.push("/")}
-                        className="flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        className="flex items-center gap-2 text-gray-500 hover:text-[#0F1A0A] font-bold transition-colors text-sm bg-white border-2 border-gray-200 px-4 py-2 rounded-xl">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6" />
                         </svg>
                         Dashboard
                     </button>
-                    <span className="font-bold text-lg tracking-tight">HRD<span className="text-purple-400">.ai</span></span>
+                    <span className="font-extrabold text-xl tracking-tight text-[#0F1A0A]">
+                        HRD<span className="text-[#3D6B2C]">.ai</span>
+                    </span>
                 </nav>
 
-                {/* Header */}
                 <div className="mb-10">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-red-500/30 bg-red-500/10 text-red-300 text-xs font-medium mb-5">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-red-200 bg-red-50 text-red-700 text-xs font-bold mb-5">
                         <span className="text-base">🔥</span>
                         CV & Motivation Letter Roaster
                     </div>
-                    <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3">
+                    <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3 text-[#0F1A0A]">
                         Roast{" "}
-                        <span style={{ background: "linear-gradient(90deg, #f87171, #fb923c)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                        <span className="text-red-600">
                             Dokumenmu
                         </span>
                     </h1>
-                    <p className="text-white/40 text-base">Upload CV atau motivation letter kamu, biar AI kasih feedback jujur tanpa basa-basi.</p>
-                    {/* <p className="text-white/40 text-base">Kami tidak menyimpan file kamu.</p> */}
+                    <p className="text-gray-500 font-medium text-base">Upload CV atau motivation letter kamu, biar AI kasih feedback jujur tanpa basa-basi.</p>
 
-                    {/* Rate limit badge */}
                     {remaining !== null && !isVIP && (
-                        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-white/50 text-xs">
-                            <span className={remaining === 0 ? "text-red-400" : "text-emerald-400"}>●</span>
+                        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-gray-200 bg-white text-gray-600 font-bold text-xs">
+                            <span className={remaining === 0 ? "text-red-500" : "text-[#3D6B2C]"}>●</span>
                             {remaining === 0 ? "Limit tercapai — coba lagi 1 jam kemudian" : `Sisa ${remaining}x percobaan jam ini`}
                         </div>
                     )}
                     {isVIP && (
-                        <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs">
+                        <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border-2 border-[#0F1A0A] bg-[#D6FB61] text-[#0F1A0A] font-bold text-xs">
                             👑 Akun VIP - unlimited access
                         </div>
                     )}
                 </div>
 
-                {/* Setup card */}
-                <div className="rounded-3xl border border-white/[0.07] p-6 sm:p-8 mb-6 space-y-6"
-                    style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)" }}>
+                <div className="rounded-[2rem] border-2 border-gray-100 bg-white p-6 sm:p-8 mb-8 shadow-xl shadow-black/5 space-y-8">
 
-                    {/* Doc type */}
                     <div>
-                        <label className="text-xs font-semibold text-white/30 uppercase tracking-widest block mb-3">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-3">
                             Jenis Dokumen
                         </label>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {([
                                 { id: "cv", label: "📄 CV / Resume", desc: "Riwayat hidup & pengalaman" },
                                 { id: "motivation_letter", label: "✉️ Motivation Letter", desc: "Surat lamaran kerja" },
                             ] as const).map((d) => (
                                 <button key={d.id} onClick={() => setDocType(d.id)}
-                                    className={`p-4 rounded-2xl border text-left transition-all ${docType === d.id
-                                        ? "border-red-400/60 bg-red-500/10 ring-2 ring-red-500/10"
-                                        : "border-white/08 hover:border-white/20"
-                                        }`}
-                                    style={{ background: docType === d.id ? undefined : "rgba(255,255,255,0.02)" }}>
-                                    <p className={`text-sm font-semibold mb-0.5 ${docType === d.id ? "text-white" : "text-white/60"}`}>{d.label}</p>
-                                    <p className="text-xs text-white/30">{d.desc}</p>
+                                    className={`p-4 rounded-2xl border-2 text-left transition-all ${docType === d.id
+                                        ? "border-[#0F1A0A] bg-[#0F1A0A] text-white"
+                                        : "border-gray-100 bg-gray-50 hover:border-gray-200 text-[#0F1A0A]"
+                                        }`}>
+                                    <p className="text-sm font-black mb-1">{d.label}</p>
+                                    <p className={`text-xs font-semibold ${docType === d.id ? "text-gray-300" : "text-gray-500"}`}>{d.desc}</p>
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Target */}
                     <div>
-                        <label className="text-xs font-semibold text-white/30 uppercase tracking-widest block mb-3">
-                            Target Posisi / Industri <span className="text-white/20 normal-case font-normal">(opsional)</span>
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-3">
+                            Target Posisi / Industri <span className="normal-case font-semibold">(opsional)</span>
                         </label>
                         <input
                             type="text"
                             value={target}
                             onChange={(e) => setTarget(e.target.value)}
                             placeholder="contoh: Software Engineer di startup, Marketing fresh grad..."
-                            className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none border border-white/10 focus:border-red-500/40 focus:ring-2 focus:ring-red-500/10 transition-all"
-                            style={{ background: "rgba(255,255,255,0.04)" }}
+                            className="w-full rounded-2xl px-5 py-4 text-sm font-bold text-[#0F1A0A] placeholder-gray-400 bg-gray-50 border-2 border-gray-100 outline-none focus:border-[#0F1A0A] focus:bg-white transition-all"
                         />
                     </div>
 
-                    {/* Tone */}
                     <div>
-                        <label className="text-xs font-semibold text-white/30 uppercase tracking-widest block mb-3">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-3">
                             Tone Roasting
                         </label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-3 gap-3">
                             {([
                                 { id: "savage", emoji: "💀", label: "Savage", desc: "Pedas abis" },
                                 { id: "balanced", emoji: "⚖️", label: "Balanced", desc: "Jujur & adil" },
                                 { id: "constructive", emoji: "🌱", label: "Constructive", desc: "Membangun" },
                             ] as const).map((t) => (
                                 <button key={t.id} onClick={() => setTone(t.id)}
-                                    className={`p-3 rounded-xl border text-center transition-all ${tone === t.id
-                                        ? "border-orange-400/60 bg-orange-500/10 ring-2 ring-orange-500/10"
-                                        : "border-white/08 hover:border-white/20"
-                                        }`}
-                                    style={{ background: tone === t.id ? undefined : "rgba(255,255,255,0.02)" }}>
-                                    <div className="text-xl mb-1">{t.emoji}</div>
-                                    <p className={`text-xs font-semibold ${tone === t.id ? "text-white" : "text-white/60"}`}>{t.label}</p>
-                                    <p className="text-[10px] text-white/30 mt-0.5">{t.desc}</p>
+                                    className={`p-3 rounded-2xl border-2 text-center transition-all ${tone === t.id
+                                        ? "border-[#0F1A0A] bg-[#0F1A0A] text-white"
+                                        : "border-gray-100 bg-gray-50 hover:border-gray-200 text-[#0F1A0A]"
+                                        }`}>
+                                    <div className="text-2xl mb-2 bg-white inline-block p-2 rounded-xl shadow-sm border border-gray-100">{t.emoji}</div>
+                                    <p className="text-xs font-black">{t.label}</p>
+                                    <p className={`text-[10px] font-semibold mt-1 hidden sm:block ${tone === t.id ? "text-gray-300" : "text-gray-500"}`}>{t.desc}</p>
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Input mode toggle */}
                     <div>
-                        <label className="text-xs font-semibold text-white/30 uppercase tracking-widest block mb-3">
+                        <label className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-3">
                             Input Dokumen
                         </label>
-                        <div className="flex gap-2 mb-4">
+                        <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
                             {([
                                 { id: "paste", label: "📝 Paste Teks" },
                                 { id: "upload", label: "📎 Upload File" },
                             ] as const).map((m) => (
                                 <button key={m.id} onClick={() => setInputMode(m.id)}
-                                    className={`text-sm px-4 py-2 rounded-xl border transition-all ${inputMode === m.id
-                                        ? "border-white/30 bg-white/10 text-white font-medium"
-                                        : "border-white/08 text-white/40 hover:text-white/70"
+                                    className={`text-sm font-bold px-5 py-3 rounded-xl border-2 whitespace-nowrap transition-all ${inputMode === m.id
+                                        ? "border-[#0F1A0A] bg-[#D6FB61] text-[#0F1A0A]"
+                                        : "border-gray-100 bg-white text-gray-500 hover:border-gray-200 hover:text-[#0F1A0A]"
                                         }`}>
                                     {m.label}
                                 </button>
@@ -464,9 +433,8 @@ export default function CVRoastPage() {
                                 value={pastedText}
                                 onChange={(e) => setPastedText(e.target.value)}
                                 placeholder="Paste isi CV atau motivation letter kamu di sini..."
-                                rows={10}
-                                className="custom-scrollbar w-full rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none border border-white/10 focus:border-red-500/40 focus:ring-2 focus:ring-red-500/10 resize-none transition-all"
-                                style={{ background: "rgba(255,255,255,0.04)" }}
+                                rows={8}
+                                className="custom-scrollbar w-full rounded-2xl px-5 py-4 text-sm font-medium text-[#0F1A0A] placeholder-gray-400 bg-gray-50 border-2 border-gray-100 outline-none focus:border-[#0F1A0A] focus:bg-white resize-none transition-all"
                             />
                         ) : (
                             <div>
@@ -478,26 +446,26 @@ export default function CVRoastPage() {
                                     className="hidden"
                                 />
                                 <button onClick={() => fileRef.current?.click()}
-                                    className={`w-full rounded-2xl border-2 border-dashed py-10 flex flex-col items-center gap-3 transition-all ${fileName
-                                        ? "border-emerald-500/40 bg-emerald-500/5"
-                                        : "border-white/10 hover:border-white/20 bg-white/[0.02]"
+                                    className={`w-full rounded-2xl border-2 border-dashed py-12 flex flex-col items-center gap-3 transition-all ${fileName
+                                        ? "border-[#3D6B2C] bg-[#D6FB61]/20"
+                                        : "border-gray-300 hover:border-[#0F1A0A] bg-gray-50"
                                         }`}>
                                     {extracting ? (
                                         <>
-                                            <div className="w-6 h-6 border-2 border-white/20 border-t-red-400 rounded-full animate-spin" />
-                                            <p className="text-white/40 text-sm">Membaca file...</p>
+                                            <div className="w-8 h-8 border-4 border-gray-200 border-t-[#0F1A0A] rounded-full animate-spin" />
+                                            <p className="text-[#0F1A0A] font-bold text-sm mt-2">Membaca file...</p>
                                         </>
                                     ) : fileName ? (
                                         <>
-                                            <span className="text-3xl">✅</span>
-                                            <p className="text-emerald-300 text-sm font-medium">{fileName}</p>
-                                            <p className="text-white/30 text-xs">Klik untuk ganti file</p>
+                                            <span className="text-4xl bg-white p-3 rounded-2xl shadow-sm border border-gray-100">✅</span>
+                                            <p className="text-[#0F1A0A] text-sm font-black mt-2">{fileName}</p>
+                                            <p className="text-gray-500 font-semibold text-xs">Klik untuk ganti file</p>
                                         </>
                                     ) : (
                                         <>
-                                            <span className="text-3xl">📂</span>
-                                            <p className="text-white/50 text-sm">Klik untuk upload PDF atau DOCX</p>
-                                            <p className="text-white/20 text-xs">Maks. ukuran yang dianjurkan: 5MB</p>
+                                            <span className="text-4xl bg-white p-3 rounded-2xl shadow-sm border border-gray-100">📂</span>
+                                            <p className="text-[#0F1A0A] font-black text-sm mt-2">Klik untuk upload PDF atau DOCX</p>
+                                            <p className="text-gray-500 font-semibold text-xs">Maks. ukuran yang dianjurkan: 5MB</p>
                                         </>
                                     )}
                                 </button>
@@ -505,17 +473,15 @@ export default function CVRoastPage() {
                         )}
                     </div>
 
-                    {/* Submit */}
                     <button
                         onClick={handleRoast}
                         disabled={loading || extracting || (remaining !== null && remaining <= 0)}
-                        className="w-full py-4 rounded-2xl font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:opacity-90"
-                        style={{ background: "linear-gradient(135deg, #dc2626, #ea580c)" }}
+                        className={`w-full py-4 rounded-2xl font-black text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2 ${loading ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-[#0F1A0A] text-[#D6FB61] hover:-translate-y-1 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"}`}
                     >
                         {loading ? (
                             <>
-                                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                AI lagi baca dokumenmu...
+                                <div className="w-5 h-5 border-4 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                Menyusun kalimat pedas...
                             </>
                         ) : (
                             <>🔥 Roast Sekarang!</>
@@ -523,70 +489,78 @@ export default function CVRoastPage() {
                     </button>
                 </div>
 
-                {/* Result */}
                 {result && (
-                    <div id="roast-result"
-                        className="rounded-3xl border border-white/[0.07] p-6 sm:p-8"
-                        style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)" }}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
-                                    style={{ background: "linear-gradient(135deg, #dc2626, #ea580c)" }}>
-                                    🔥
+                    <div id="roast-result" className="relative mt-12">
+                        {/* Background blob transisi panas */}
+                        <div className="absolute -inset-4 rounded-[3rem] heat-blob blur-2xl -z-10" />
+
+                        <div className="rounded-[2.5rem] bg-white shadow-2xl shadow-red-900/5 heat-border overflow-hidden relative">
+                            <div className="p-8 sm:p-10">
+                                <div className="flex items-center justify-between mb-8 pb-6 border-b-2 border-gray-100">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl bg-red-50 border-2 border-red-100">
+                                            🔥
+                                        </div>
+                                        <div>
+                                            <p className="text-lg font-black text-[#0F1A0A] tracking-tight">Hasil Roasting</p>
+                                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Powered by AI</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(result);
+                                            toast.success("Disalin ke clipboard!");
+                                        }}
+                                        className="text-xs font-bold text-gray-500 hover:text-[#0F1A0A] bg-gray-50 hover:bg-gray-100 border-2 border-gray-200 px-4 py-2 rounded-xl transition-all">
+                                        Salin Teks
+                                    </button>
                                 </div>
-                                <div>
-                                    <p className="text-sm font-bold text-white">Hasil Roasting</p>
-                                    <p className="text-xs text-white/30">Powered by AI</p>
+
+                                <div className="text-[#374151]">
+                                    <ReactMarkdown
+                                        components={{
+                                            h2: ({ children }) => (
+                                                <h2 className="text-xl font-black text-[#0F1A0A] mt-8 mb-3 first:mt-0 flex items-center gap-2">
+                                                    {children}
+                                                </h2>
+                                            ),
+                                            p: ({ children }) => (
+                                                <p className="text-sm font-medium leading-relaxed mb-4 text-gray-700">{children}</p>
+                                            ),
+                                            li: ({ children }) => (
+                                                <li className="flex gap-3 text-sm font-medium leading-relaxed mb-2 text-gray-700">
+                                                    <span className="text-red-500 mt-0.5 shrink-0 text-lg leading-none">•</span>
+                                                    <span>{children}</span>
+                                                </li>
+                                            ),
+                                            ul: ({ children }) => <ul className="space-y-2 mb-6">{children}</ul>,
+                                            strong: ({ children }) => <strong className="text-[#0F1A0A] font-black bg-red-50 px-1 rounded">{children}</strong>,
+                                        }}
+                                    >
+                                        {result}
+                                    </ReactMarkdown>
+                                </div>
+
+                                <div className="mt-10 pt-8 border-t-2 border-gray-100 flex flex-col sm:flex-row gap-4">
+                                    <button
+                                        onClick={() => { setResult(""); setPastedText(""); setRawText(""); setFileName(""); }}
+                                        className="flex-1 py-4 rounded-xl border-2 border-gray-200 text-gray-600 bg-white text-sm font-black hover:bg-gray-50 hover:border-gray-300 transition-all text-center">
+                                        Roast Dokumen Lain
+                                    </button>
+                                    <button
+                                        onClick={() => router.push("/setup")}
+                                        className="flex-1 py-4 rounded-xl font-black text-sm transition-all hover:-translate-y-1 hover:shadow-lg bg-[#0F1A0A] text-[#D6FB61] flex items-center justify-center gap-2">
+                                        Lanjut Simulasi Interview
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                    </button>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(result);
-                                    toast.success("Disalin!");
-                                }}
-                                className="text-xs text-white/30 hover:text-white/70 border border-white/10 hover:border-white/20 px-3 py-1.5 rounded-lg transition-all">
-                                Salin
-                            </button>
-                        </div>
-
-                        <ReactMarkdown
-                            components={{
-                                h2: ({ children }) => (
-                                    <h2 className="text-base font-bold text-white mt-6 mb-2 first:mt-0">{children}</h2>
-                                ),
-                                p: ({ children }) => (
-                                    <p className="text-sm text-white/70 leading-relaxed mb-2">{children}</p>
-                                ),
-                                li: ({ children }) => (
-                                    <li className="flex gap-2 text-sm text-white/70 leading-relaxed mb-1">
-                                        <span className="text-red-400 mt-0.5 shrink-0">•</span>
-                                        <span>{children}</span>
-                                    </li>
-                                ),
-                                ul: ({ children }) => <ul className="space-y-1 mb-3">{children}</ul>,
-                                strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                            }}
-                        >
-                            {result}
-                        </ReactMarkdown>
-                        <div className="mt-8 pt-6 border-t border-white/[0.06] flex gap-3">
-                            <button
-                                onClick={() => { setResult(""); setPastedText(""); setRawText(""); setFileName(""); }}
-                                className="flex-1 py-3 rounded-xl border border-white/10 text-white/50 text-sm font-medium hover:bg-white/5 transition-all">
-                                Roast Lagi
-                            </button>
-                            <button
-                                onClick={() => router.push("/setup")}
-                                className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all hover:opacity-90"
-                                style={{ background: "linear-gradient(135deg, #7c3aed, #2563eb)" }}>
-                                Coba Interview →
-                            </button>
                         </div>
                     </div>
                 )}
 
-                <p className="text-center text-white/10 text-xs mt-12">
-                    HRD.ai
+                <p className="text-center text-gray-400 font-bold text-xs mt-12 uppercase tracking-widest">
+                    HRD.ai • Made with 🤖🫰
                 </p>
             </div>
         </div>

@@ -50,7 +50,7 @@ export default function LoginPage() {
 
       <Toaster position="top-center" />
 
-      <div className="w-full max-w-md bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 relative z-10">
+      <div className="w-full max-w-md bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-[#D6FB61] relative z-10">
         
         <div className="mb-10 text-center flex flex-col items-center">
           <div className="flex items-center justify-center w-20 h-20 rounded-full bg-[#D6FB61] mb-6">
