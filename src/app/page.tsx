@@ -8,6 +8,7 @@ import {
   collection, query, orderBy, limit, getDocs, Timestamp
 } from "firebase/firestore";
 import toast, { Toaster } from "react-hot-toast";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type Session = {
   id: string;
@@ -28,7 +29,7 @@ function ScoreRing({ score }: { score: number }) {
 
   return (
     <svg width="72" height="72" className="rotate-[-90deg]">
-      <circle cx="36" cy="36" r={r} fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="5" />
+      <circle cx="36" cy="36" r={r} fill="none" strokeWidth="5" className="stroke-gray-100 dark:stroke-zinc-800 transition-colors duration-300" />
       <circle
         cx="36" cy="36" r={r} fill="none"
         stroke={color} strokeWidth="5"
@@ -53,12 +54,12 @@ function ScoreRing({ score }: { score: number }) {
 
 function VerdictBadge({ verdict, score }: { verdict: string; score: number }) {
   const cfg =
-    score >= 80 ? "bg-emerald-100 text-emerald-700 border-emerald-200" :
-      score >= 60 ? "bg-blue-100 text-blue-700 border-blue-200" :
-        score >= 40 ? "bg-amber-100 text-amber-700 border-amber-200" :
-          "bg-red-100 text-red-700 border-red-200";
+    score >= 80 ? "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20" :
+      score >= 60 ? "bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/20" :
+        score >= 40 ? "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20" :
+          "bg-red-100 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20";
   return (
-    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg}`}>
+    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border transition-colors duration-300 ${cfg}`}>
       {verdict}
     </span>
   );
@@ -75,7 +76,7 @@ export default function DashboardPage() {
     setMounted(true);
     if (!user) return;
     fetchHistory();
-  }, []);
+  }, [user]);
 
   async function fetchHistory() {
     setLoadingHistory(true);
@@ -107,71 +108,9 @@ export default function DashboardPage() {
   const bestScore = sessions.length ? Math.max(...sessions.map((s) => s.score)) : null;
 
   return (
-    <div
-      className="min-h-screen overflow-x-hidden"
-      style={{
-        background: "#F4F0E8",
-        fontFamily: "'Nunito', sans-serif",
-      }}
-    >
+    <div className="min-h-screen overflow-x-hidden bg-[#F4F0E8] dark:bg-zinc-950 transition-colors duration-300 pb-16">
+      
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
-
-        * { font-family: 'Nunito', sans-serif; }
-
-        .bento-card {
-          background: #fff;
-          border-radius: 20px;
-          border: 1.5px solid rgba(0,0,0,0.06);
-          transition: box-shadow 0.2s, transform 0.2s;
-        }
-        .bento-card:hover {
-          box-shadow: 0 8px 32px rgba(0,0,0,0.07);
-        }
-        .session-row {
-          display: flex;
-          align-items: center;
-          gap: 14px;
-          padding: 12px 14px;
-          border-radius: 14px;
-          cursor: pointer;
-          transition: background 0.15s, transform 0.15s;
-        }
-        .session-row:hover {
-          background: #F4F0E8;
-          transform: translateX(3px);
-        }
-        .btn-main {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          font-weight: 700;
-          font-size: 14px;
-          padding: 13px 22px;
-          border-radius: 14px;
-          border: none;
-          cursor: pointer;
-          transition: all 0.18s;
-          font-family: 'Nunito', sans-serif;
-        }
-        .btn-main:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 20px rgba(0,0,0,0.12);
-        }
-        .btn-main:active {
-          transform: scale(0.97);
-        }
-        .pulse-dot {
-          width: 7px; height: 7px;
-          border-radius: 50%;
-          background: #D6FB61;
-          animation: blink 2s infinite;
-          display: inline-block;
-        }
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
         .fade-up {
           opacity: 0;
           transform: translateY(16px);
@@ -180,241 +119,106 @@ export default function DashboardPage() {
         @keyframes fadeUp {
           to { opacity: 1; transform: translateY(0); }
         }
-
-        .nav-wrap {
-          padding: 0 40px;
-        }
-        .main-wrap {
-          padding: 32px 40px 60px;
-        }
-        .grid-top {
-          display: grid;
-          grid-template-columns: 1fr 340px;
-          gap: 16px;
-          margin-bottom: 16px;
-        }
-        .grid-bottom {
-          display: grid;
-          grid-template-columns: 340px 1fr;
-          gap: 16px;
-        }
-        .hero-title {
-          font-size: 42px;
-        }
-        .stats-wrap {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        @media (max-width: 900px) {
-          .nav-wrap {
-            padding: 0 20px;
-          }
-          .main-wrap {
-            padding: 20px 20px 60px;
-          }
-          .grid-top {
-            grid-template-columns: 1fr;
-          }
-          .grid-bottom {
-            display: flex;
-            flex-direction: column;
-          }
-          .hero-title {
-            font-size: 32px;
-          }
-          .stats-wrap {
-            flex-direction: row;
-            flex-wrap: wrap;
-          }
-          .stats-wrap > div {
-            flex: 1 1 40%;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .stats-wrap {
-            flex-direction: column;
-          }
-          .nav-wrap {
-            padding: 0 16px;
-          }
-          .main-wrap {
-            padding: 16px 16px 40px;
-          }
-        }
       `}</style>
 
       <Toaster position="top-right" toastOptions={{
-        style: { background: "#1a1a1a", color: "#fff", borderRadius: "12px", fontSize: "14px" }
+        className: "dark:bg-zinc-800 dark:text-zinc-100 dark:border dark:border-zinc-700"
       }} />
 
-      <nav className="nav-wrap" style={{
-        background: "#fff",
-        borderBottom: "1.5px solid rgba(0,0,0,0.06)",
-        height: "60px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{
-            width: 34, height: 34,
-            background: "#0F1A0A",
-            borderRadius: 10,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D6FB61" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <nav className="px-4 sm:px-10 h-[70px] bg-white dark:bg-zinc-900 border-b-2 border-gray-100 dark:border-zinc-800 flex items-center justify-between sticky top-0 z-50 transition-colors duration-300">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-[#0F1A0A] rounded-xl flex items-center justify-center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D6FB61" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
               <path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
           </div>
-          <span style={{ fontWeight: 800, fontSize: 17, color: "#0F1A0A", letterSpacing: "-0.3px" }}>
-            HRD<span style={{ color: "#3D6B2C" }}>.ai</span>
+          <span className="font-extrabold text-xl text-[#0F1A0A] dark:text-zinc-100 tracking-tight">
+            HRD<span className="text-[#3D6B2C] dark:text-[#D6FB61]">.ai</span>
           </span>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {user?.photoURL && (
-            <img src={user.photoURL} alt="avatar"
-              style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid #D6FB61", objectFit: "cover" }} />
-          )}
-          <span style={{ fontSize: 13, color: "#6B7F60", fontWeight: 500 }} className="hidden sm:inline">
-            {user?.displayName}
-          </span>
-          <button onClick={handleLogout} style={{
-            fontSize: 12, fontWeight: 600, color: "#6B7F60",
-            background: "transparent",
-            border: "1.5px solid rgba(0,0,0,0.1)",
-            borderRadius: 20, padding: "6px 14px",
-            cursor: "pointer", fontFamily: "Nunito, sans-serif",
-            transition: "all .15s",
-          }}>
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          
+          <div className="hidden sm:flex items-center gap-3 border-l-2 border-gray-100 dark:border-zinc-800 pl-4 transition-colors duration-300">
+            {user?.photoURL && (
+              <img src={user.photoURL} alt="avatar" className="w-8 h-8 rounded-full border-2 border-[#D6FB61] object-cover" />
+            )}
+            <span className="text-sm font-bold text-gray-600 dark:text-zinc-300">
+              {user?.displayName}
+            </span>
+          </div>
+
+          <button onClick={handleLogout} className="text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-[#0F1A0A] dark:hover:text-white bg-gray-50 dark:bg-zinc-800/50 hover:bg-gray-100 dark:hover:bg-zinc-800 border-2 border-gray-200 dark:border-zinc-700 rounded-xl px-4 py-2 transition-all">
             Logout
           </button>
         </div>
       </nav>
 
-      <div className="main-wrap">
+      <div className="px-4 sm:px-10 pt-8 sm:pt-10">
 
-        <div className={`grid-top ${mounted ? "fade-up" : ""}`} style={{ animationDelay: "0.05s" }}>
-          <div className="bento-card" style={{
-            padding: "36px 40px",
-            background: "#0F1A0A",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            minHeight: 220,
-            position: "relative",
-            overflow: "hidden",
-          }}>
-            <div style={{
-              position: "absolute", top: -60, right: -60,
-              width: 220, height: 220,
-              borderRadius: "50%",
-              background: "rgba(214,251,97,0.08)",
-              pointerEvents: "none",
-            }} />
+        <div className={`grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 mb-4 ${mounted ? "fade-up" : ""}`} style={{ animationDelay: "0.05s" }}>
+          <div className="bg-[#0F1A0A] dark:bg-zinc-900 rounded-[2rem] p-8 sm:p-10 flex flex-col justify-between min-h-[240px] relative overflow-hidden border-2 border-transparent dark:border-zinc-800 transition-colors duration-300">
+            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[#D6FB61]/10 dark:bg-[#D6FB61]/5 pointer-events-none" />
 
             <div>
-              <div style={{
-                display: "inline-flex", alignItems: "center", gap: 7,
-                background: "rgba(214,251,97,0.12)",
-                border: "1px solid rgba(214,251,97,0.25)",
-                borderRadius: 20, padding: "5px 12px",
-                marginBottom: 20,
-              }}>
-                <span className="pulse-dot" />
-                <span style={{ fontSize: 11, fontWeight: 700, color: "#D6FB61", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+              <div className="inline-flex items-center gap-2 bg-[#D6FB61]/10 border border-[#D6FB61]/20 rounded-full px-3.5 py-1.5 mb-6">
+                <span className="w-2 h-2 rounded-full bg-[#D6FB61] animate-pulse" />
+                <span className="text-xs font-bold text-[#D6FB61] tracking-wider uppercase">
                   AI Interview Simulator
                 </span>
               </div>
 
-              <h1 className="hero-title" style={{
-                fontWeight: 900,
-                color: "#fff", lineHeight: 1.1,
-                letterSpacing: "-1px", margin: 0,
-              }}>
+              <h1 className="text-4xl sm:text-5xl font-black text-white leading-tight tracking-tight mb-2">
                 Halo,{" "}
-                <span style={{
-                  background: "#D6FB61",
-                  color: "#0F1A0A",
-                  borderRadius: 8,
-                  padding: "0 8px 2px",
-                  display: "inline-block",
-                  marginTop: 8
-                }}>
+                <span className="bg-[#D6FB61] text-[#0F1A0A] rounded-xl px-3 py-0.5 inline-block mt-2">
                   {user?.displayName ?? "Kamu"}!
                 </span>
               </h1>
             </div>
 
-            <p style={{ fontSize: 16, color: "rgba(255,255,255,0.45)", fontWeight: 400, margin: "16px 0 0" }}>
+            <p className="text-lg text-white/50 font-medium mt-6">
               Siap hajar interview hari ini? 🎯
             </p>
           </div>
 
-          <div className="stats-wrap">
+          <div className="flex flex-col sm:flex-row lg:flex-col gap-4">
             {[
               { label: "Total Sesi", value: sessions.length || "—", suffix: sessions.length ? "x" : "" },
               { label: "Rata-rata Skor", value: avgScore ?? "—", suffix: avgScore ? "/100" : "" },
               { label: "Skor Terbaik", value: bestScore ?? "—", suffix: bestScore ? "/100" : "" },
             ].map((s) => (
-              <div key={s.label} className="bento-card" style={{
-                padding: "18px 22px",
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}>
-                <span style={{ fontSize: 13, color: "#6B7F60", fontWeight: 600 }}>{s.label}</span>
-                <span style={{ fontSize: 26, fontWeight: 900, color: "#0F1A0A", letterSpacing: "-0.5px" }}>
+              <div key={s.label} className="flex-1 bg-white dark:bg-zinc-900 rounded-[1.5rem] border-2 border-gray-100 dark:border-zinc-800 p-5 flex items-center justify-between transition-colors duration-300">
+                <span className="text-sm font-bold text-gray-500 dark:text-zinc-400">{s.label}</span>
+                <span className="text-3xl font-black text-[#0F1A0A] dark:text-zinc-100 tracking-tight">
                   {s.value}
-                  <span style={{ fontSize: 13, fontWeight: 500, color: "#aaa" }}>{s.suffix}</span>
+                  <span className="text-sm font-bold text-gray-400 dark:text-zinc-500 ml-1">{s.suffix}</span>
                 </span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="grid-bottom">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4">
+          <div className="flex flex-col gap-3">
             <button
-              className="btn-main"
               onClick={() => router.push("/setup")}
-              style={{
-                background: "#0F1A0A",
-                color: "#D6FB61",
-                width: "100%",
-                justifyContent: "center",
-                fontSize: 15,
-              }}
+              className="w-full inline-flex items-center justify-center gap-2 font-black text-base px-6 py-4 rounded-[1.5rem] bg-[#0F1A0A] dark:bg-zinc-100 text-[#D6FB61] dark:text-zinc-900 transition-all hover:-translate-y-1 hover:shadow-lg active:scale-95"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                 <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
               </svg>
               Mulai Simulasi Interview
             </button>
 
             <button
-              className="btn-main"
               onClick={() => router.push("/cv-roasting")}
-              style={{
-                background: "#fff",
-                color: "#0F1A0A",
-                border: "1.5px solid rgba(0,0,0,0.1)",
-                width: "100%",
-                justifyContent: "center",
-                fontSize: 15,
-              }}
+              className="w-full inline-flex items-center justify-center gap-2 font-black text-base px-6 py-4 rounded-[1.5rem] bg-white dark:bg-zinc-900 text-[#0F1A0A] dark:text-zinc-100 border-2 border-gray-200 dark:border-zinc-800 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-gray-300 dark:hover:border-zinc-700 active:scale-95"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
                 <line x1="16" y1="13" x2="8" y2="13"/>
@@ -425,62 +229,48 @@ export default function DashboardPage() {
             </button>
           </div>
 
-          <div className="bento-card" style={{ padding: "24px 24px" }}>
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginBottom: 16,
-            }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+          <div className="bg-white dark:bg-zinc-900 rounded-[2rem] border-2 border-gray-100 dark:border-zinc-800 p-6 sm:p-8 transition-colors duration-300">
+            <div className="flex items-center justify-between mb-6">
+              <span className="text-xs font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest">
                 Riwayat Sesi
               </span>
               {sessions.length > 0 && (
-                <span style={{ fontSize: 12, color: "#bbb" }}>{sessions.length} sesi</span>
+                <span className="text-xs font-bold text-gray-400 dark:text-zinc-500">{sessions.length} sesi</span>
               )}
             </div>
 
             {loadingHistory ? (
-              <div style={{ display: "flex", justifyContent: "center", padding: "48px 0" }}>
-                <div style={{
-                  width: 24, height: 24,
-                  border: "2.5px solid rgba(0,0,0,0.06)",
-                  borderTop: "2.5px solid #3D6B2C",
-                  borderRadius: "50%",
-                  animation: "spin 0.8s linear infinite",
-                }} />
-                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+              <div className="flex justify-center py-12">
+                <div className="w-8 h-8 border-4 border-gray-100 dark:border-zinc-800 border-t-[#0F1A0A] dark:border-t-[#D6FB61] rounded-full animate-spin" />
               </div>
             ) : sessions.length === 0 ? (
-              <div style={{
-                textAlign: "center", padding: "48px 24px",
-                border: "1.5px dashed rgba(0,0,0,0.08)",
-                borderRadius: 14,
-              }}>
-                <div style={{ fontSize: 32, marginBottom: 10 }}>🎤</div>
-                <p style={{ fontSize: 14, color: "#6B7F60", marginBottom: 4, fontWeight: 600 }}>Belum ada sesi interview</p>
-                <p style={{ fontSize: 12, color: "#bbb" }}>Mulai simulasi pertamamu di atas!</p>
+              <div className="text-center py-12 px-6 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-3xl">
+                <div className="text-5xl mb-4 bg-gray-50 dark:bg-zinc-800 inline-block p-4 rounded-3xl">🎤</div>
+                <p className="text-base font-black text-[#0F1A0A] dark:text-zinc-100 mb-1">Belum ada sesi interview</p>
+                <p className="text-sm font-medium text-gray-500 dark:text-zinc-400">Mulai simulasi pertamamu lewat tombol di samping!</p>
               </div>
             ) : (
-              <div>
+              <div className="flex flex-col gap-2">
                 {sessions.map((s) => (
-                  <div key={s.id} className="session-row">
+                  <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:translate-x-1 border-2 border-transparent hover:border-gray-100 dark:hover:border-zinc-800">
                     <ScoreRing score={s.score} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3, flexWrap: "wrap" }}>
-                        <p style={{ fontWeight: 700, color: "#0F1A0A", fontSize: 14, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                        <p className="font-black text-[#0F1A0A] dark:text-zinc-100 text-base m-0 truncate">
                           {s.company}
                         </p>
                         <VerdictBadge verdict={s.verdict} score={s.score} />
                       </div>
-                      <p style={{ fontSize: 12, color: "#6B7F60", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <p className="text-sm font-bold text-gray-500 dark:text-zinc-400 m-0 truncate">
                         {s.field} · {s.level}
                       </p>
-                      <p style={{ fontSize: 11, color: "#bbb", margin: "2px 0 0" }}>
+                      <p className="text-xs font-semibold text-gray-400 dark:text-zinc-600 mt-1">
                         {s.createdAt?.toDate?.()?.toLocaleDateString("id-ID", {
                           day: "numeric", month: "short", year: "numeric"
                         }) ?? "—"}
                       </p>
                     </div>
-                    <svg style={{ color: "#ccc", flexShrink: 0 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg className="text-gray-300 dark:text-zinc-600 shrink-0" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
                   </div>
@@ -490,10 +280,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-
-      <p style={{ textAlign: "center", fontSize: 11, color: "#bbb", paddingBottom: 32 }}>
-        HRD.ai · Made with 🤖🫰
-      </p>
     </div>
   );
 }

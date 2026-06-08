@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @source "../src/**/*.{ts,tsx,js,jsx}";
 
+@custom-variant dark (&:is(.dark *));
+
 button {
     cursor: pointer;
 }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "HRD.ai — Simulasi Interview",
@@ -9,9 +10,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body className="antialiased">
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
