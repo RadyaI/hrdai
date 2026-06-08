@@ -317,7 +317,7 @@ export default function SessionPage() {
               onClick={() => router.back()}
               style={{ width: 36, height: 36, borderRadius: 10, background: "#fff", border: "2px solid rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#0F1A0A" }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
             </button>
             <div>
               <p style={{ fontSize: 15, fontWeight: 800, color: "#0F1A0A", margin: 0, letterSpacing: "-0.3px" }}>
@@ -330,7 +330,7 @@ export default function SessionPage() {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#6B7F60", display: "none", sm: "block" }}>{questionCount}/{MAX_QUESTIONS} pertanyaan</span>
+            <span className="hidden sm:block" style={{ fontSize: 12, fontWeight: 700, color: "#6B7F60" }}>{questionCount}/{MAX_QUESTIONS} pertanyaan</span>
             <div style={{ width: 80, height: 6, background: "rgba(0,0,0,0.05)", borderRadius: 99, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${progress}%`, background: "#0F1A0A", borderRadius: 99, transition: "width 0.4s ease" }} />
             </div>
@@ -412,7 +412,7 @@ export default function SessionPage() {
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                   <p style={{ fontSize: 11, fontWeight: 600, color: "#a1a1aa", display: "flex", alignItems: "center", gap: 4, margin: 0 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                     Enter untuk kirim · Shift+Enter baris baru · atau jawab pake suara
                   </p>
                   <button
@@ -465,9 +465,9 @@ export default function SessionPage() {
                     }}
                   >
                     {isListening ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V23h2v-2.06A9 9 0 0 0 21 12v-2h-2z"/></svg>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" /><path d="M19 10v2a7 7 0 0 1-14 0v-2H3v2a9 9 0 0 0 8 8.94V23h2v-2.06A9 9 0 0 0 21 12v-2h-2z" /></svg>
                     )}
                   </button>
 
@@ -485,7 +485,7 @@ export default function SessionPage() {
                     }}
                   >
                     Kirim
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
                   </button>
                 </div>
               </>

@@ -147,7 +147,7 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F4F0E8", display: "flex", flexDirection: "column", alignItems: "center", justifyCenter: "center", gap: 16, justifyContent: "center" }}>
+      <div style={{ minHeight: "100vh", background: "#F4F0E8", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, justifyContent: "center" }}>
         <style>{`
           @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
           * { font-family: 'Nunito', sans-serif; }
@@ -232,7 +232,7 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
               <span style={{ fontSize: 18, fontWeight: 800, color: scoreColor(feedback.score), display: "block", marginTop: 4 }}>{feedback.verdict}</span>
             </div>
             
-            <svg width="76" height="76" viewBox="0 0 72 72" style={{ shrink: 0 }}>
+            <svg width="76" height="76" viewBox="0 0 72 72" style={{ flexShrink: 0 }}>
               <circle cx="36" cy="36" r="28" fill="none" stroke="rgba(0,0,0,0.04)" strokeWidth="7"/>
               <circle cx="36" cy="36" r="28" fill="none" stroke={scoreColor(feedback.score)} strokeWidth="7"
                 strokeDasharray={`${(feedback.score / 100) * 175.9} 175.9`}
@@ -268,7 +268,7 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
         </div>
 
         <div style={{ background: "#fff", border: "2px solid rgba(0,0,0,0.03)", borderRadius: 20, padding: "22px 20px" }}>
-          <p style={{ fontSize: 13, fontWeight: 800, color: "#10b981", textTransform: "uppercase", tracking: "0.05em", letterSpacing: "0.5px", marginBottom: 14 }}>✓ Kelebihan kamu</p>
+          <p style={{ fontSize: 13, fontWeight: 800, color: "#10b981", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 14 }}>✓ Kelebihan kamu</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {feedback.strengths.map((s, i) => (
               <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -280,7 +280,7 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
         </div>
 
         <div style={{ background: "#fff", border: "2px solid rgba(0,0,0,0.03)", borderRadius: 20, padding: "22px 20px" }}>
-          <p style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", tracking: "0.05em", letterSpacing: "0.5px", marginBottom: 14 }}>↑ Perlu ditingkatkan</p>
+          <p style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 14 }}>↑ Perlu ditingkatkan</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {feedback.improvements.map((s, i) => (
               <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
@@ -292,7 +292,7 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
         </div>
 
         <div style={{ background: "#fff", border: "2px solid #0F1A0A", borderRadius: 20, padding: "22px 20px" }}>
-          <p style={{ fontSize: 13, fontWeight: 800, color: "#0F1A0A", textTransform: "uppercase", tracking: "0.05em", letterSpacing: "0.5px", marginBottom: 10 }}>💡 Tips untuk sesi berikutnya</p>
+          <p style={{ fontSize: 13, fontWeight: 800, color: "#0F1A0A", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 10 }}>💡 Tips untuk sesi berikutnya</p>
           <p style={{ fontSize: 14, color: "#374151", fontWeight: 600, lineHeight: 1.6, margin: 0 }}>{feedback.tips}</p>
         </div>
 
