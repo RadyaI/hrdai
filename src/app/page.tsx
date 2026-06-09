@@ -109,7 +109,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#F4F0E8] dark:bg-zinc-950 transition-colors duration-300 pb-16">
-      
+
       <style>{`
         .fade-up {
           opacity: 0;
@@ -142,7 +142,7 @@ export default function DashboardPage() {
 
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          
+
           <div className="hidden sm:flex items-center gap-3 border-l-2 border-gray-100 dark:border-zinc-800 pl-4 transition-colors duration-300">
             {user?.photoURL && (
               <img src={user.photoURL} alt="avatar" className="w-8 h-8 rounded-full border-2 border-[#D6FB61] object-cover" />
@@ -219,11 +219,11 @@ export default function DashboardPage() {
               className="w-full inline-flex items-center justify-center gap-2 font-black text-base px-6 py-4 rounded-[1.5rem] bg-white dark:bg-zinc-900 text-[#0F1A0A] dark:text-zinc-100 border-2 border-gray-200 dark:border-zinc-800 transition-all hover:-translate-y-1 hover:shadow-lg hover:border-gray-300 dark:hover:border-zinc-700 active:scale-95"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                <polyline points="14 2 14 8 20 8"/>
-                <line x1="16" y1="13" x2="8" y2="13"/>
-                <line x1="16" y1="17" x2="8" y2="17"/>
-                <polyline points="10 9 9 9 8 9"/>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
               </svg>
               Roasting CV
             </button>
@@ -252,8 +252,11 @@ export default function DashboardPage() {
             ) : (
               <div className="flex flex-col gap-2">
                 {sessions.map((s) => (
-                  <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:translate-x-1 border-2 border-transparent hover:border-gray-100 dark:hover:border-zinc-800">
-                    <ScoreRing score={s.score} />
+                  <div
+                    key={s.id}
+                    onClick={() => router.push(`/result/${s.id}`)}
+                    className="flex items-center gap-4 p-4 rounded-2xl cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-zinc-800/50 hover:translate-x-1 border-2 border-transparent hover:border-gray-100 dark:hover:border-zinc-800"
+                  >                    <ScoreRing score={s.score} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                         <p className="font-black text-[#0F1A0A] dark:text-zinc-100 text-base m-0 truncate">

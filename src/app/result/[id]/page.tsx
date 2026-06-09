@@ -1,20 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import toast, { Toaster } from "react-hot-toast";
 import ThemeToggle from "@/components/ThemeToggle";
-
-const FEEDBACK_API = "https://radya.my.id/api/chat/gemini";
 
 type CategoryScore = {
   score: number;   
   note: string;    
 };
 
-type Feedback = {
+type FeedbackData = {
+  company: string;
+  field: string;
+  level: string;
   score: number;
   verdict: string;
   summary: string;
@@ -27,9 +29,10 @@ type Feedback = {
   strengths: string[];
   improvements: string[];
   tips: string;
+  createdAt: any;
 };
 
-// Helper buat ngambil class Tailwind berdasarkan skor (mendukung dark mode)
+// Helper buat class Tailwind berdasarkan skor
 function getScoreTheme(s: number) {
   if (s >= 80) return {
     text: "text-emerald-600 dark:text-emerald-400",
@@ -64,116 +67,51 @@ const CATEGORY_META: Record<string, { label: string; icon: string; desc: string 
   relevance:  { label: "Relevance",  icon: "🎯", desc: "Jawaban nyambung sama pertanyaan" },
 };
 
-export default function ResultPage() {
+export default function HistoryResultPage() {
   const router = useRouter();
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const params = useParams();
+  const id = params.id as string;
+  
+  const [feedback, setFeedback] = useState<FeedbackData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const rawMessages = sessionStorage.getItem("interview_messages");
-    const rawConfig   = sessionStorage.getItem("interview_config");
-    if (!rawMessages || !rawConfig) return router.replace("/setup");
-    generateFeedback(JSON.parse(rawMessages), JSON.parse(rawConfig));
-  }, [router]);
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.replace("/login");
+        return;
+      }
+      try {
+        const docRef = doc(db, "users", user.uid, "sessions", id);
+        const snap = await getDoc(docRef);
+        
+        if (snap.exists()) {
+          setFeedback(snap.data() as FeedbackData);
+        } else {
+          toast.error("Data interview tidak ditemukan.");
+          router.push("/");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Gagal memuat history.");
+      } finally {
+        setLoading(false);
+      }
+    });
 
-  async function generateFeedback(
-    messages: { role: string; text: string }[],
-    config: { company: string; field: string; level: string }
-  ) {
-    setLoading(true);
-    try {
-      const prompt = `Kamu adalah evaluator interview profesional. Balas HANYA dengan JSON murni, tanpa teks apapun di luar JSON.
-
-Berikut transkrip sesi interview untuk posisi ${config.field} level ${config.level} di ${config.company}:
-
-TRANSKRIP:
-${messages.map((m) => `${m.role === "user" ? "Kandidat" : "HRD"}: ${m.text}`).join("\n\n")}
-
-Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa markdown, tanpa backtick):
-{
-  "score": <angka 0-100, kamu yang tentukan berdasarkan keseluruhan performa>,
-  "verdict": "<Sangat Berpeluang|Berpeluang|Perlu Latihan|Belum Siap>",
-  "summary": "<ringkasan 2-3 kalimat performa keseluruhan>",
-  "categories": {
-    "komunikasi": { "score": <0-100>, "note": "<1 kalimat evaluasi>" },
-    "technical":  { "score": <0-100>, "note": "<1 kalimat evaluasi>" },
-    "confidence": { "score": <0-100>, "note": "<1 kalimat evaluasi>" },
-    "relevance":  { "score": <0-100>, "note": "<1 kalimat evaluasi>" }
-  },
-  "strengths":    ["<kelebihan 1>", "<kelebihan 2>", "<kelebihan 3>"],
-  "improvements": ["<perlu diperbaiki 1>", "<perlu diperbaiki 2>"],
-  "tips": "<satu saran konkret paling penting untuk sesi berikutnya>"
-}`;
-
-      const res = await fetch(FEEDBACK_API, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ history: [{ role: "user", text: prompt }], persona: "default" }),
-      });
-
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-
-      const cleaned   = data.text.replace(/```json|```/g, "").trim();
-      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error("Format feedback tidak valid");
-
-      const parsed: Feedback = JSON.parse(jsonMatch[0]);
-      setFeedback(parsed);
-      await saveToFirestore(messages, config, parsed);
-    } catch (err) {
-      console.error(err);
-      toast.error("Gagal generate feedback. Coba lagi.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function saveToFirestore(
-    messages: { role: string; text: string }[],
-    config: { company: string; field: string; level: string },
-    fb: Feedback
-  ) {
-    const user = auth.currentUser;
-    if (!user || saved) return;
-    try {
-      await addDoc(collection(db, "users", user.uid, "sessions"), {
-        ...config, messages,
-        name: user.displayName,
-        email: user.email,
-        score: fb.score, verdict: fb.verdict, summary: fb.summary,
-        categories: fb.categories,
-        strengths: fb.strengths, improvements: fb.improvements, tips: fb.tips,
-        createdAt: serverTimestamp(),
-      });
-      setSaved(true);
-    } catch (e) {
-      console.warn("Gagal simpan ke Firestore:", e);
-    }
-  }
+    return () => unsub();
+  }, [id, router]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#F4F0E8] dark:bg-zinc-950 flex flex-col items-center justify-center gap-4 transition-colors duration-300">
         <div className="w-10 h-10 border-4 border-gray-200 dark:border-zinc-800 border-t-[#0F1A0A] dark:border-t-[#D6FB61] rounded-full animate-spin" />
-        <p className="text-[#6B7F60] dark:text-zinc-400 text-sm font-bold">AI lagi analisis interview kamu...</p>
+        <p className="text-[#6B7F60] dark:text-zinc-400 text-sm font-bold">Membuka arsip interview...</p>
       </div>
     );
   }
 
-  if (!feedback) {
-    return (
-      <div className="min-h-screen bg-[#F4F0E8] dark:bg-zinc-950 flex items-center justify-center transition-colors duration-300">
-        <div className="text-center bg-white dark:bg-zinc-900 p-6 rounded-[20px] border-2 border-gray-100 dark:border-zinc-800">
-          <p className="text-[#0F1A0A] dark:text-zinc-100 mb-3 text-[15px] font-bold">Gagal memuat hasil.</p>
-          <button onClick={() => router.push("/setup")} className="text-[#3D6B2C] dark:text-[#D6FB61] text-sm font-extrabold bg-transparent border-none cursor-pointer underline">
-            Coba lagi
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!feedback) return null;
 
   const cats = feedback.categories;
   const mainTheme = getScoreTheme(feedback.score);
@@ -187,10 +125,12 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
 
       <div className="max-w-[600px] mx-auto flex flex-col gap-5">
 
-        <div className="flex items-center justify-between gap-2.5">
+        <div className="flex items-center justify-between gap-2.5 mb-2">
           <div>
-            <h1 className="text-2xl font-black text-[#0F1A0A] dark:text-zinc-100 m-0 tracking-tight">Hasil Interview</h1>
-            <p className="text-[13px] font-bold text-[#6B7F60] dark:text-zinc-400 mt-1">Analisis AI dari sesi yang baru selesai</p>
+            <h1 className="text-2xl font-black text-[#0F1A0A] dark:text-zinc-100 m-0 tracking-tight">Arsip Interview</h1>
+            <p className="text-[13px] font-bold text-[#6B7F60] dark:text-zinc-400 mt-1">
+              {feedback.company} · {feedback.field}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <ThemeToggle />
@@ -275,21 +215,6 @@ Evaluasi kandidat dan kembalikan JSON dengan format PERSIS seperti ini (tanpa ma
         <div className="bg-white dark:bg-zinc-800/50 border-2 border-[#0F1A0A] dark:border-[#D6FB61]/30 rounded-[1.2rem] p-5 sm:p-6 transition-colors duration-300">
           <p className="text-[13px] font-extrabold text-[#0F1A0A] dark:text-[#D6FB61] uppercase tracking-widest mb-2.5">💡 Tips untuk sesi berikutnya</p>
           <p className="text-[14px] text-gray-800 dark:text-zinc-200 font-bold leading-relaxed m-0">{feedback.tips}</p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 pt-1">
-          <button
-            onClick={() => { sessionStorage.removeItem("interview_messages"); router.push("/setup"); }}
-            className="flex-1 bg-[#0F1A0A] dark:bg-[#D6FB61] border-none rounded-2xl py-4 text-[15px] font-extrabold text-[#D6FB61] dark:text-[#0F1A0A] cursor-pointer transition-all active:scale-[0.98] hover:-translate-y-1 hover:shadow-lg"
-          >
-            Interview Lagi
-          </button>
-          <button
-            onClick={() => router.push("/")}
-            className="flex-1 bg-white dark:bg-zinc-900 border-2 border-gray-200 dark:border-zinc-700 rounded-2xl py-4 text-[15px] font-extrabold text-[#0F1A0A] dark:text-zinc-100 cursor-pointer transition-all active:scale-[0.98] hover:-translate-y-1 hover:bg-gray-50 dark:hover:bg-zinc-800"
-          >
-            Dashboard
-          </button>
         </div>
 
       </div>
